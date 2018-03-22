@@ -227,24 +227,22 @@ blockFormatErrorResponse(operations op, int json_resp, int errCode,
 
 
 static void
-blockStr2arrayAddToJsonObj(json_object *json_obj, char *string, char *label,
-                           json_object **json_array)
+blockStr2arrayAddToJsonObj(json_object *json_obj, char *string, char *label)
 {
   char *tmp = NULL;
-  json_object *json_array1 = NULL;
+  json_object *json_array = NULL;
 
   if (!string)
     return;
 
-  json_array1 = json_object_new_array();
+  json_array = json_object_new_array();
   tmp = strtok (string, " ");
   while (tmp != NULL)
   {
-    json_object_array_add(json_array1, GB_JSON_OBJ_TO_STR(tmp));
+    json_object_array_add(json_array, GB_JSON_OBJ_TO_STR(tmp));
     tmp = strtok (NULL, " ");
   }
-  json_object_object_add(json_obj, label, json_array1);
-  *json_array = json_array1;
+  json_object_object_add(json_obj, label, json_array);
 }
 
 
@@ -2114,7 +2112,6 @@ blockReplaceNodeCliFormatResponse(blockReplaceCli *blk, int errCode, char *errMs
                                   struct blockResponse *reply)
 {
   json_object *json_obj = NULL;
-  json_object *json_array[2] = {NULL, };
   char *tmp = NULL;
   char *entry = NULL;
   int i;
@@ -2185,16 +2182,16 @@ blockReplaceNodeCliFormatResponse(blockReplaceCli *blk, int errCode, char *errMs
 
       if (savereply->rop->status == GB_OP_SKIPPED) {
         blockStr2arrayAddToJsonObj(json_obj, savereply->rop->skipped,
-                                   "REPLACE PORTAL SKIPPED ON", &json_array[0]);
+                                   "REPLACE PORTAL SKIPPED ON");
       } else {
         if (savereply->rop->attempt) {
           blockStr2arrayAddToJsonObj(json_obj, savereply->rop->attempt,
-                                     "REPLACE PORTAL FAILED ON", &json_array[0]);
+                                     "REPLACE PORTAL FAILED ON");
         }
         if (savereply->rop->success) {
           blockStr2arrayAddToJsonObj(json_obj,
                                      savereply->rop->success?savereply->rop->success:"N/A",
-                                     "REPLACE PORTAL SUCCESS ON", &json_array[1]);
+                                     "REPLACE PORTAL SUCCESS ON");
         }
       }
 
@@ -2208,11 +2205,6 @@ blockReplaceNodeCliFormatResponse(blockReplaceCli *blk, int errCode, char *errMs
     }
     GB_ASPRINTF(&reply->out, "%s\n", json_object_to_json_string_ext(json_obj,
                                        mapJsonFlagToJsonCstring(blk->json_resp)));
-    for (i = 0; i < 2; i++) {
-      if (json_array[i]) {
-        json_object_put(json_array[i]);
-      }
-    }
     json_object_put(json_obj);
   } else {
     if (GB_ASPRINTF(&entry, "NAME: %s\n", blk->block_name) == -1) {
@@ -2650,7 +2642,6 @@ blockModifyCliFormatResponse (blockModifyCli *blk, struct blockModify *mobj,
                               bool rollback)
 {
   json_object *json_obj = NULL;
-  json_object *json_array[4] = {0};
   char        *tmp2 = NULL;
   char        *tmp3 = NULL;
   char        *tmp = NULL;
@@ -2684,24 +2675,22 @@ blockModifyCliFormatResponse (blockModifyCli *blk, struct blockModify *mobj,
     }
 
     if (savereply->attempt) {
-      blockStr2arrayAddToJsonObj(json_obj, savereply->attempt, "FAILED ON",
-                                 &json_array[0]);
+      blockStr2arrayAddToJsonObj(json_obj, savereply->attempt, "FAILED ON");
     }
 
     if (savereply->success) {
-      blockStr2arrayAddToJsonObj(json_obj, savereply->success,
-                                 "SUCCESSFUL ON", &json_array[1]);
+      blockStr2arrayAddToJsonObj(json_obj, savereply->success, "SUCCESSFUL ON");
     }
 
     if (rollback) {
       if (savereply->rb_attempt) {
         blockStr2arrayAddToJsonObj(json_obj, savereply->rb_attempt,
-                                   "ROLLBACK FAILED ON", &json_array[2]);
+                                   "ROLLBACK FAILED ON");
       }
 
       if (savereply->rb_success) {
         blockStr2arrayAddToJsonObj(json_obj, savereply->rb_success,
-                                   "ROLLBACK SUCCESS ON", &json_array[3]);
+                                   "ROLLBACK SUCCESS ON");
       }
     }
 
@@ -2711,11 +2700,6 @@ blockModifyCliFormatResponse (blockModifyCli *blk, struct blockModify *mobj,
     GB_ASPRINTF(&reply->out, "%s\n", json_object_to_json_string_ext(json_obj,
                                      mapJsonFlagToJsonCstring(blk->json_resp)));
 
-    for (i = 0; i < 4; i++) {
-      if (json_array[i]) {
-        json_object_put(json_array[i]);
-      }
-    }
     json_object_put(json_obj);
   } else {
     /* save 'failed on'*/
@@ -2954,7 +2938,6 @@ blockModifySizeCliFormatResponse(blockModifySizeCli *blk, struct blockModifySize
                                  MetaInfo *info, struct blockResponse *reply)
 {
   json_object *json_obj = NULL;
-  json_object *json_array[3] = {0};
   char        *tmp = NULL;
   char        *tmp2 = NULL;
   char        *tmp3 = NULL;
@@ -2994,18 +2977,15 @@ blockModifySizeCliFormatResponse(blockModifySizeCli *blk, struct blockModifySize
     }
 
     if (savereply->attempt) {
-      blockStr2arrayAddToJsonObj(json_obj, savereply->attempt,
-                                 "FAILED ON", &json_array[0]);
+      blockStr2arrayAddToJsonObj(json_obj, savereply->attempt, "FAILED ON");
     }
 
     if (savereply->success) {
-      blockStr2arrayAddToJsonObj(json_obj, savereply->success,
-                                 "SUCCESSFUL ON", &json_array[1]);
+      blockStr2arrayAddToJsonObj(json_obj, savereply->success, "SUCCESSFUL ON");
     }
 
     if (savereply->skipped) {
-      blockStr2arrayAddToJsonObj(json_obj, savereply->skipped,
-                                 "SKIPPED ON", &json_array[2]);
+      blockStr2arrayAddToJsonObj(json_obj, savereply->skipped, "SKIPPED ON");
     }
 
     json_object_object_add(json_obj, "RESULT",
@@ -3014,11 +2994,6 @@ blockModifySizeCliFormatResponse(blockModifySizeCli *blk, struct blockModifySize
     GB_ASPRINTF(&reply->out, "%s\n", json_object_to_json_string_ext(json_obj,
                 mapJsonFlagToJsonCstring(blk->json_resp)));
 
-    for (i = 0; i < 3; i++) {
-      if (json_array[i]) {
-        json_object_put(json_array[i]);
-      }
-    }
     json_object_put(json_obj);
   } else {
     /* save 'failed on'*/
@@ -3213,7 +3188,7 @@ blockCreateCliFormatResponse(struct glfs *glfs, blockCreateCli *blk,
 {
   MetaInfo *info = NULL;
   json_object *json_obj = NULL;
-  json_object *json_array[3] = {0};
+  json_object *json_array = NULL;
   char         *tmp      = NULL;
   char         *tmp2     = NULL;
   char         *portals  = NULL;
@@ -3278,23 +3253,23 @@ blockCreateCliFormatResponse(struct glfs *glfs, blockCreateCli *blk,
                              GB_JSON_OBJ_TO_STR(cobj->passwd));
     }
 
-    json_array[0] = json_object_new_array();
+    json_array = json_object_new_array();
 
     for (i = 0; i < savereply->nportal; i++) {
-      json_object_array_add(json_array[0],
+      json_object_array_add(json_array,
                             GB_JSON_OBJ_TO_STR(savereply->portal[i]));
     }
 
-    json_object_object_add(json_obj, "PORTAL(S)", json_array[0]);
+    json_object_object_add(json_obj, "PORTAL(S)", json_array);
 
     if (savereply->obj->d_attempt) {
          blockStr2arrayAddToJsonObj(json_obj, savereply->obj->d_attempt,
-                                    "ROLLBACK FAILED ON", &json_array[1]);
+                                    "ROLLBACK FAILED ON");
     }
 
     if (savereply->obj->d_success) {
          blockStr2arrayAddToJsonObj(json_obj, savereply->obj->d_success,
-                                    "ROLLBACK SUCCESS ON", &json_array[2]);
+                                    "ROLLBACK SUCCESS ON");
     }
 
     json_object_object_add(json_obj, "RESULT",
@@ -3303,11 +3278,6 @@ blockCreateCliFormatResponse(struct glfs *glfs, blockCreateCli *blk,
     GB_ASPRINTF(&reply->out, "%s\n",
                 json_object_to_json_string_ext(json_obj,
                                      mapJsonFlagToJsonCstring(blk->json_resp)));
-    for (i = 0; i < 3; i++) {
-      if (json_array[i]) {
-        json_object_put(json_array[i]);
-      }
-    }
     json_object_put(json_obj);
   } else {
     for (i = 0; i < savereply->nportal; i++) {
@@ -3907,8 +3877,6 @@ blockDeleteCliFormatResponse(blockDeleteCli *blk, int errCode, char *errMsg,
                              struct blockResponse *reply)
 {
   json_object *json_obj = NULL;
-  json_object *json_array1 = NULL;
-  json_object *json_array2 = NULL;
   char *tmp = NULL;
 
   if (!reply) {
@@ -3930,10 +3898,8 @@ blockDeleteCliFormatResponse(blockDeleteCli *blk, int errCode, char *errMsg,
   if (blk->json_resp) {
     json_obj = json_object_new_object();
 
-    blockStr2arrayAddToJsonObj (json_obj, savereply->d_attempt,
-                                "FAILED ON", &json_array1);
-    blockStr2arrayAddToJsonObj (json_obj, savereply->d_success,
-                                "SUCCESSFUL ON", &json_array2);
+    blockStr2arrayAddToJsonObj (json_obj, savereply->d_attempt, "FAILED ON");
+    blockStr2arrayAddToJsonObj (json_obj, savereply->d_success, "SUCCESSFUL ON");
 
     json_object_object_add(json_obj, "RESULT",
         errCode?GB_JSON_OBJ_TO_STR("FAIL"):GB_JSON_OBJ_TO_STR("SUCCESS"));
@@ -3942,10 +3908,6 @@ blockDeleteCliFormatResponse(blockDeleteCli *blk, int errCode, char *errMsg,
                 json_object_to_json_string_ext(json_obj,
                                      mapJsonFlagToJsonCstring(blk->json_resp)));
 
-    if (json_array1)
-      json_object_put(json_array1);
-    if (json_array2)
-      json_object_put(json_array2);
     json_object_put(json_obj);
   } else {
     /* save 'failed on'*/
@@ -4472,20 +4434,15 @@ block_list_cli_1_svc_st(blockListCli *blk, struct svc_req *rqstp)
   errCode = reply->exit;
   if (blk->json_resp) {
     if (errCode) {
-      json_object_object_add(json_obj, "RESULT",
-                             GB_JSON_OBJ_TO_STR("FAIL"));
-      json_object_object_add(json_obj, "errCode",
-                             json_object_new_int(errCode));
-      json_object_object_add(json_obj, "errMsg",
-                             GB_JSON_OBJ_TO_STR(errMsg));
+      json_object_object_add(json_obj, "RESULT", GB_JSON_OBJ_TO_STR("FAIL"));
+      json_object_object_add(json_obj, "errCode", json_object_new_int(errCode));
+      json_object_object_add(json_obj, "errMsg",  GB_JSON_OBJ_TO_STR(errMsg));
     } else {
-            json_object_object_add(json_obj, "RESULT",
-                                   GB_JSON_OBJ_TO_STR("SUCCESS"));
+      json_object_object_add(json_obj, "RESULT", GB_JSON_OBJ_TO_STR("SUCCESS"));
     }
     GB_ASPRINTF(&reply->out, "%s\n",
                 json_object_to_json_string_ext(json_obj,
                                 mapJsonFlagToJsonCstring(blk->json_resp)));
-    json_object_put(json_array);
     json_object_put(json_obj);
   } else {
     if (errCode) {
@@ -4597,10 +4554,6 @@ blockInfoCliFormatResponse(blockInfoCli *blk, int errCode,
     GB_ASPRINTF(&reply->out, "%s\n",
                 json_object_to_json_string_ext(json_obj,
                                 mapJsonFlagToJsonCstring(blk->json_resp)));
-    json_object_put(json_array1);
-    if (json_array2) {
-      json_object_put(json_array2);
-    }
     json_object_put(json_obj);
   } else {
     if (GB_ASPRINTF(&tmp, "NAME: %s\nVOLUME: %s\nGBID: %s\nSIZE: %s\n"
