@@ -127,6 +127,7 @@ struct gbConf {
   char cliLogFile[PATH_MAX];
   char gfapiLogFile[PATH_MAX];
   char configShellLogFile[PATH_MAX];
+  char cmdhistoryLogFile[PATH_MAX];
 };
 
 extern struct gbConf gbConf;

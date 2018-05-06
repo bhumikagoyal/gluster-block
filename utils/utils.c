@@ -16,7 +16,7 @@
 # include "config.h"
 
 
-struct gbConf gbConf = {GB_LOG_INFO, GB_LOGDIR, '\0', '\0', '\0', '\0'};
+struct gbConf gbConf = {GB_LOG_INFO, GB_LOGDIR, '\0', '\0', '\0', '\0', '\0'};
 
 const char *argp_program_version = ""                                 \
   PACKAGE_NAME" ("PACKAGE_VERSION")"                                  \
@@ -244,6 +244,8 @@ initLogging(void)
            "%s/gluster-block-gfapi.log", logDir);
   snprintf(gbConf.configShellLogFile, PATH_MAX,
            "%s/gluster-block-configshell.log", logDir);
+  snprintf(gbConf.cmdhistoryLogFile, PATH_MAX,
+          "%s/cmd_history.log", logDir);
 
   if(!glusterBlockLogdirCreate()) {
     return EXIT_FAILURE;

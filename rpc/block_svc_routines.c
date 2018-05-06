@@ -17,7 +17,7 @@
 # include  <netdb.h>
 # include  <uuid/uuid.h>
 # include  <json-c/json.h>
-
+# include  <stdio.h>
 
 # define   UUID_BUF_SIZE        38
 # define   GB_DEFAULT_ERRCODE   255
@@ -115,6 +115,7 @@ typedef struct blockRemoteCreateResp {
 } blockRemoteCreateResp;
 
 
+
 static char *
 getLastWordNoDot(char *line)
 {
@@ -194,6 +195,36 @@ mapJsonFlagToJsonCstring(int jsonflag)
   }
 }
 
+
+void collectRequestLogs(char *cmd, int errCode, const char *message, int json)
+{
+        FILE *fp;
+        char timestamp[GB_TIME_STRING_BUFLEN] = {0};
+        fp=fopen(gbConf.cmdhistoryLogFile,"a");
+        if (fp==NULL){
+                fprintf(stderr,"Error opening log file: %s\n"
+                        "Logging to stderr.\n",strerror(errno));
+                fp = stderr;
+        }
+
+        logTimeNow(timestamp, GB_TIME_STRING_BUFLEN);
+        if (json)
+          fprintf(fp,"[%s] %s: %s: %s", timestamp, cmd, errCode?"FAIL":"SUCCESS", message);
+        else{
+                char *p = (char *)malloc((strlen(message)+1)*sizeof(char));
+                strcpy(p, message);
+                char *q = p;
+                while(*q!='\0'){
+                  if(*q=='\n')
+                          *q = ' ';
+                  q++;
+                }
+                fprintf(fp,"[%s] %s: %s: %s\n", timestamp, cmd, errCode?"FAIL":"SUCCESS", p);
+                GB_FREE(p);
+        }
+        if(fp != stderr)
+           fclose(fp);
+}
 
 void
 blockFormatErrorResponse(operations op, int json_resp, int errCode,
@@ -2691,6 +2722,7 @@ blockModifyCliFormatResponse (blockModifyCli *blk, struct blockModify *mobj,
   if (errMsg) {
     blockFormatErrorResponse(MODIFY_SRV, blk->json_resp, errCode,
                              errMsg, reply);
+    collectRequestLogs(blk->cmd, errCode, reply->out, blk->json_resp);
     return;
   }
 
@@ -2733,6 +2765,7 @@ blockModifyCliFormatResponse (blockModifyCli *blk, struct blockModify *mobj,
     GB_ASPRINTF(&reply->out, "%s\n", json_object_to_json_string_ext(json_obj,
                                      mapJsonFlagToJsonCstring(blk->json_resp)));
 
+    collectRequestLogs(blk->cmd, errCode, reply->out, blk->json_resp);
     json_object_put(json_obj);
   } else {
     /* save 'failed on'*/
@@ -2768,6 +2801,8 @@ blockModifyCliFormatResponse (blockModifyCli *blk, struct blockModify *mobj,
 
     GB_ASPRINTF(&reply->out, "%s%s%sRESULT: %s\n", tmp3, savereply->rb_attempt?tmp:"",
                 savereply->rb_success?tmp2:"", errCode?"FAIL":"SUCCESS");
+    collectRequestLogs(blk->cmd, errCode, reply->out, blk->json_resp);
+
     GB_FREE(tmp2);
     GB_FREE(tmp3);
   }
@@ -2777,6 +2812,7 @@ blockModifyCliFormatResponse (blockModifyCli *blk, struct blockModify *mobj,
   if (!reply->out) {
     blockFormatErrorResponse(MODIFY_SRV, blk->json_resp, errCode,
                              GB_DEFAULT_ERRMSG, reply);
+    collectRequestLogs(blk->cmd, errCode, reply->out, blk->json_resp);
   }
 
 }
@@ -2987,6 +3023,7 @@ blockModifySizeCliFormatResponse(blockModifySizeCli *blk, struct blockModifySize
   if (errMsg) {
     blockFormatErrorResponse(MODIFY_SIZE_SRV, blk->json_resp, errCode,
                              errMsg, reply);
+    collectRequestLogs(blk->cmd, errCode, reply->out, blk->json_resp);
     return;
   }
 
@@ -2995,6 +3032,7 @@ blockModifySizeCliFormatResponse(blockModifySizeCli *blk, struct blockModifySize
     GB_ASPRINTF (&errMsg, "%s", "failed in glusterBlockFormatSize");
     blockFormatErrorResponse(MODIFY_SIZE_SRV, blk->json_resp, ENOMEM,
                              errMsg, reply);
+    collectRequestLogs(blk->cmd, ENOMEM, reply->out, blk->json_resp);
     GB_FREE(errMsg);
     return;
   }
@@ -3026,6 +3064,7 @@ blockModifySizeCliFormatResponse(blockModifySizeCli *blk, struct blockModifySize
     GB_ASPRINTF(&reply->out, "%s\n", json_object_to_json_string_ext(json_obj,
                 mapJsonFlagToJsonCstring(blk->json_resp)));
 
+    collectRequestLogs(blk->cmd, errCode, reply->out, blk->json_resp);
     json_object_put(json_obj);
   } else {
     /* save 'failed on'*/
@@ -3054,6 +3093,7 @@ blockModifySizeCliFormatResponse(blockModifySizeCli *blk, struct blockModifySize
     }
 
     GB_ASPRINTF(&reply->out, "%sRESULT: %s\n", tmp3, errCode?"FAIL":"SUCCESS");
+    collectRequestLogs(blk->cmd, errCode, reply->out, blk->json_resp);
   }
   GB_FREE(tmp);
   GB_FREE(tmp2);
@@ -3063,6 +3103,7 @@ blockModifySizeCliFormatResponse(blockModifySizeCli *blk, struct blockModifySize
   if (!reply->out) {
     blockFormatErrorResponse(MODIFY_SIZE_SRV, blk->json_resp, errCode,
                              GB_DEFAULT_ERRMSG, reply);
+    collectRequestLogs(blk->cmd, errCode, reply->out, blk->json_resp);
   }
 
   GB_FREE(hr_size);
@@ -3216,7 +3257,6 @@ block_modify_size_cli_1_svc_st(blockModifySizeCli *blk, struct svc_req *rqstp)
   return reply;
 }
 
-
 void
 blockCreateCliFormatResponse(struct glfs *glfs, blockCreateCli *blk,
                              struct blockCreate2 *cobj, int errCode,
@@ -3243,13 +3283,16 @@ blockCreateCliFormatResponse(struct glfs *glfs, blockCreateCli *blk,
 
   if (errMsg) {
     blockFormatErrorResponse(CREATE_SRV, blk->json_resp, errCode,
-                             errMsg, reply);
+		              errMsg, reply);
+    collectRequestLogs(blk->cmd, errCode, reply->out, blk->json_resp);
+
     return;
   }
 
   if (GB_ALLOC(info) < 0) {
     blockFormatErrorResponse(CREATE_SRV, blk->json_resp, ENOMEM,
                              "Allocatoin Failed\n", reply);
+    collectRequestLogs(blk->cmd, ENOMEM, reply->out, blk->json_resp);
     return;
   }
 
@@ -3258,6 +3301,7 @@ blockCreateCliFormatResponse(struct glfs *glfs, blockCreateCli *blk,
       blockFormatErrorResponse(CREATE_SRV, blk->json_resp,
                                (errCode?errCode:GB_DEFAULT_ERRCODE),
                                savereply->errMsg, reply);
+      collectRequestLogs(blk->cmd, errCode?errCode:GB_DEFAULT_ERRCODE, reply->out, blk->json_resp);
     }
     goto out;
   }
@@ -3315,6 +3359,7 @@ blockCreateCliFormatResponse(struct glfs *glfs, blockCreateCli *blk,
     GB_ASPRINTF(&reply->out, "%s\n",
                 json_object_to_json_string_ext(json_obj,
                                      mapJsonFlagToJsonCstring(blk->json_resp)));
+    collectRequestLogs(blk->cmd, errCode, reply->out, blk->json_resp);
     json_object_put(json_obj);
   } else {
     for (i = 0; i < savereply->nportal; i++) {
@@ -3356,6 +3401,7 @@ blockCreateCliFormatResponse(struct glfs *glfs, blockCreateCli *blk,
                 savereply->iqn?savereply->iqn:"-",
                 blk->auth_mode?tmp2:"", portals?portals:"-", tmp?tmp:"",
                 errCode?"FAIL":"SUCCESS");
+    collectRequestLogs(blk->cmd, errCode, reply->out, blk->json_resp);
   }
 
  out:
@@ -3363,6 +3409,7 @@ blockCreateCliFormatResponse(struct glfs *glfs, blockCreateCli *blk,
   if (!reply->out) {
     blockFormatErrorResponse(CREATE_SRV, blk->json_resp, errCode,
                              GB_DEFAULT_ERRMSG, reply);
+    collectRequestLogs(blk->cmd, errCode, reply->out, blk->json_resp);
   }
 
   blockFreeMetaInfo(info);
@@ -3994,6 +4041,7 @@ blockDeleteCliFormatResponse(blockDeleteCli *blk, int errCode, char *errMsg,
   if (errMsg) {
     blockFormatErrorResponse(DELETE_SRV, blk->json_resp, errCode,
                              errMsg, reply);
+    collectRequestLogs(blk->cmd, errCode, reply->out, blk->json_resp);
     return;
   }
 
@@ -4008,8 +4056,9 @@ blockDeleteCliFormatResponse(blockDeleteCli *blk, int errCode, char *errMsg,
 
     GB_ASPRINTF(&reply->out, "%s\n",
                 json_object_to_json_string_ext(json_obj,
-                                     mapJsonFlagToJsonCstring(blk->json_resp)));
+			              mapJsonFlagToJsonCstring(blk->json_resp)));
 
+    collectRequestLogs(blk->cmd, errCode, reply->out, blk->json_resp);
     json_object_put(json_obj);
   } else {
     /* save 'failed on'*/
@@ -4024,12 +4073,14 @@ blockDeleteCliFormatResponse(blockDeleteCli *blk, int errCode, char *errMsg,
           errCode?"FAIL":"SUCCESS") == -1) {
             goto out;
     }
+    collectRequestLogs(blk->cmd, errCode, reply->out, blk->json_resp);
   }
  out:
   /*catch all*/
   if (!reply->out) {
     blockFormatErrorResponse(DELETE_SRV, blk->json_resp, errCode,
                              GB_DEFAULT_ERRMSG, reply);
+    collectRequestLogs(blk->cmd, errCode, reply->out, blk->json_resp);
   }
 
   GB_FREE (tmp);

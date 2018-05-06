@@ -316,6 +316,20 @@ glusterBlockParseVolumeBlock(char *volumeblock, char *volume, char *block,
   return ret;
 }
 
+void getCommandString(char **cmd, int argcount, char **options)
+{
+   int total_length = 0;
+   int i;
+   for(i = 1; i< argcount; i++){
+	total_length = total_length + strlen(options[i])+1;
+   }
+   *cmd = (char *)malloc((total_length+1)*sizeof(char));
+   for(i=1; i< argcount; i++){
+	strcat(*cmd, options[i]);
+	strcat(*cmd, " ");
+   }
+}
+
 static int
 glusterBlockModify(int argcount, char **options, int json)
 {
@@ -363,7 +377,7 @@ glusterBlockModify(int argcount, char **options, int json)
     GB_STRCPYSTATIC(mobj.volume, volume);
     GB_STRCPYSTATIC(mobj.block_name, block);
     mobj.json_resp = json;
-
+    getCommandString(&mobj.cmd, argcount, options);
     ret = glusterBlockCliRPC_1(&mobj, MODIFY_CLI);
     if (ret) {
       LOG("cli", GB_LOG_ERROR,
@@ -401,6 +415,7 @@ glusterBlockModify(int argcount, char **options, int json)
     GB_STRCPYSTATIC(msobj.block_name, block);
     msobj.size = sparse_ret;  /* size is unsigned long long */
     msobj.json_resp = json;
+    getCommandString(&msobj.cmd, argcount, options);
 
     ret = glusterBlockCliRPC_1(&msobj, MODIFY_SIZE_CLI);
     if (ret) {
@@ -561,6 +576,7 @@ glusterBlockCreate(int argcount, char **options, int json)
     cobj.size = sparse_ret;  /* size is unsigned long long */
   }
 
+  getCommandString(&cobj.cmd, argcount, options);
   ret = glusterBlockCliRPC_1(&cobj, CREATE_CLI);
   if (ret) {
     LOG("cli", GB_LOG_ERROR,
@@ -648,6 +664,8 @@ glusterBlockDelete(int argcount, char **options, int json)
         " for <%s/%s>", options[optind], dobj.volume, dobj.block_name);
     goto out;
   }
+
+  getCommandString(&dobj.cmd, argcount, options);
 
   ret = glusterBlockCliRPC_1(&dobj, DELETE_CLI);
   if (ret) {
