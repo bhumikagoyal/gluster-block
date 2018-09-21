@@ -18,6 +18,7 @@
 # include  <uuid/uuid.h>
 # include  <json-c/json.h>
 
+
 # define   UUID_BUF_SIZE        38
 # define   GB_DEFAULT_ERRCODE   255
 
@@ -3126,7 +3127,6 @@ blockModifyCliFormatResponse (blockModifyCli *blk, struct blockModify *mobj,
 
     GB_ASPRINTF(&reply->out, "%s%s%sRESULT: %s\n", tmp3, savereply->rb_attempt?tmp:"",
                 savereply->rb_success?tmp2:"", errCode?"FAIL":"SUCCESS");
-
     GB_FREE(tmp2);
     GB_FREE(tmp3);
   }
@@ -3603,6 +3603,7 @@ block_modify_size_cli_1_svc_st(blockModifySizeCli *blk, struct svc_req *rqstp)
   return reply;
 }
 
+
 void
 blockCreateCliFormatResponse(struct glfs *glfs, blockCreateCli *blk,
                              struct blockCreate2 *cobj, int errCode,
@@ -3630,7 +3631,7 @@ blockCreateCliFormatResponse(struct glfs *glfs, blockCreateCli *blk,
 
   if (errMsg) {
     blockFormatErrorResponse(CREATE_SRV, blk->json_resp, errCode,
-		              errMsg, reply);
+                             errMsg, reply);
 
     return;
   }
@@ -4454,7 +4455,7 @@ blockDeleteCliFormatResponse(blockDeleteCli *blk, int errCode, char *errMsg,
 
     GB_ASPRINTF(&reply->out, "%s\n",
                 json_object_to_json_string_ext(json_obj,
-			              mapJsonFlagToJsonCstring(blk->json_resp)));
+                                     mapJsonFlagToJsonCstring(blk->json_resp)));
 
     json_object_put(json_obj);
   } else {

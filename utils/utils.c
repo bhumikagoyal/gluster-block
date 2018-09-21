@@ -245,7 +245,7 @@ initLogging(void)
   snprintf(gbConf.configShellLogFile, PATH_MAX,
            "%s/gluster-block-configshell.log", logDir);
   snprintf(gbConf.cmdhistoryLogFile, PATH_MAX,
-          "%s/cmd_history.log", logDir);
+           "%s/cmd_history.log", logDir);
 
   if(!glusterBlockLogdirCreate()) {
     return EXIT_FAILURE;
