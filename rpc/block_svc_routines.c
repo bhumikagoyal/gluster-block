@@ -18,7 +18,6 @@
 # include  <uuid/uuid.h>
 # include  <json-c/json.h>
 
-
 # define   UUID_BUF_SIZE        38
 # define   GB_DEFAULT_ERRCODE   255
 
@@ -2406,6 +2405,7 @@ block_replace_cli_1_svc_st(blockReplaceCli *blk, struct svc_req *rqstp)
   }
 
   GB_METALOCK_OR_GOTO(lkfd, blk->volume, errCode, errMsg, optfail);
+  LOG("cmdlog", GB_LOG_INFO, "%s", blk->cmd);
 
   if (glfs_access(glfs, blk->block_name, F_OK)) {
     errCode = errno;
@@ -2469,6 +2469,7 @@ block_replace_cli_1_svc_st(blockReplaceCli *blk, struct svc_req *rqstp)
  out:
   GB_METAUNLOCK(lkfd, blk->volume, errCode, errMsg);
   blockReplaceNodeCliFormatResponse(blk, errCode, errMsg, savereply, reply);
+  LOG("cmdlog", errCode?GB_LOG_ERROR:GB_LOG_INFO, "%s", reply->out);
   blockServerDefFree(list);
   blockRemoteReplaceRespFree(savereply);
 
@@ -3186,6 +3187,7 @@ block_modify_cli_1_svc_st(blockModifyCli *blk, struct svc_req *rqstp)
   }
 
   GB_METALOCK_OR_GOTO(lkfd, blk->volume, ret, errMsg, nolock);
+  LOG("cmdlog", GB_LOG_INFO, "%s", blk->cmd);
 
   if (glfs_access(glfs, blk->block_name, F_OK)) {
     errCode = errno;
@@ -3318,6 +3320,7 @@ block_modify_cli_1_svc_st(blockModifyCli *blk, struct svc_req *rqstp)
  initfail:
   blockModifyCliFormatResponse (blk, &mobj, asyncret?asyncret:errCode,
                                 errMsg, savereply, info, reply, rollback);
+  LOG("cmdlog", errCode?GB_LOG_ERROR:GB_LOG_INFO, "%s", reply->out);
   blockFreeMetaInfo(info);
 
   if (savereply) {
@@ -3485,6 +3488,7 @@ block_modify_size_cli_1_svc_st(blockModifySizeCli *blk, struct svc_req *rqstp)
   }
 
   GB_METALOCK_OR_GOTO(lkfd, blk->volume, ret, errMsg, nolock);
+  LOG("cmdlog", GB_LOG_INFO, "%s",  blk->cmd);
 
   if (glfs_access(glfs, blk->block_name, F_OK)) {
     errCode = errno;
@@ -3589,6 +3593,7 @@ block_modify_size_cli_1_svc_st(blockModifySizeCli *blk, struct svc_req *rqstp)
  initfail:
   blockModifySizeCliFormatResponse(blk, &mobj, asyncret?asyncret:errCode,
                                    errMsg, savereply, info, reply);
+  LOG("cmdlog", errCode?GB_LOG_ERROR:GB_LOG_INFO, "%s", reply->out);
   blockFreeMetaInfo(info);
 
   blockRemoteRespFree(savereply);
@@ -3596,7 +3601,6 @@ block_modify_size_cli_1_svc_st(blockModifySizeCli *blk, struct svc_req *rqstp)
 
   return reply;
 }
-
 
 void
 blockCreateCliFormatResponse(struct glfs *glfs, blockCreateCli *blk,
@@ -3827,6 +3831,7 @@ block_create_cli_1_svc_st(blockCreateCli *blk, struct svc_req *rqstp)
   }
 
   GB_METALOCK_OR_GOTO(lkfd, blk->volume, errCode, errMsg, out);
+  LOG("cmdlog", GB_LOG_INFO, "%s", blk->cmd);
 
   if (!glfs_access(glfs, blk->block_name, F_OK)) {
     LOG("mgmt", GB_LOG_ERROR,
@@ -3923,6 +3928,7 @@ block_create_cli_1_svc_st(blockCreateCli *blk, struct svc_req *rqstp)
 
  optfail:
   blockCreateCliFormatResponse(glfs, blk, &cobj, errCode, errMsg, savereply, reply);
+  LOG("cmdlog", errCode?GB_LOG_ERROR:GB_LOG_INFO, "%s", reply->out);
   GB_FREE(errMsg);
   blockServerDefFree(list);
   blockCreateParsedRespFree(savereply);
@@ -4516,6 +4522,7 @@ block_delete_cli_1_svc_st(blockDeleteCli *blk, struct svc_req *rqstp)
   }
 
   GB_METALOCK_OR_GOTO(lkfd, blk->volume, errCode, errMsg, optfail);
+  LOG("cmdlog", GB_LOG_INFO, "%s", blk->cmd);
 
   if (glfs_access(glfs, blk->block_name, F_OK)) {
     errCode = errno;
@@ -4581,6 +4588,7 @@ block_delete_cli_1_svc_st(blockDeleteCli *blk, struct svc_req *rqstp)
 
 
   blockDeleteCliFormatResponse(blk, errCode, errMsg, savereply, reply);
+  LOG("cmdlog", errCode?GB_LOG_ERROR:GB_LOG_INFO, "%s", reply->out);
 
   if (savereply) {
     GB_FREE(savereply->d_attempt);
