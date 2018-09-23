@@ -354,13 +354,13 @@ void
 getCommandString(char **cmd, int argcount, char **options)
 {
   int total_length = 0;
-  int i, ret;
+  int i;
 
   for(i = 1; i < argcount; i++){
     total_length = total_length + strlen(options[i])+1;
   }
-  ret = GB_ALLOC_N(*cmd, (total_length + 1));
-  if (ret) {
+
+  if (GB_ALLOC_N(*cmd, (total_length + 1))) {
     LOG("cmdlog", GB_LOG_ERROR, "%s", "Could not allocate memory for command string");
     return;
   }
@@ -424,7 +424,6 @@ glusterBlockModify(int argcount, char **options, int json)
       LOG("cli", GB_LOG_ERROR,
           "failed modifying auth of block %s on volume %s", block, volume);
     }
-    GB_FREE(mobj.cmd);
   } else if (!strcmp(options[optind], "size")) {
     optind++;
     sparse_ret = glusterBlockParseSize("cli", options[optind++]);
@@ -460,7 +459,6 @@ glusterBlockModify(int argcount, char **options, int json)
           "failed modifying size of block %s on volume %s",
           msobj.block_name, msobj.volume);
     }
-    GB_FREE(msobj.cmd);
   } else {
     MSG("unknown option '%s' for modify:\n%s\n", options[optind], GB_MODIFY_HELP_STR);
     ret = -1;
@@ -468,6 +466,8 @@ glusterBlockModify(int argcount, char **options, int json)
 
  out:
 
+  GB_FREE(msobj.cmd);
+  GB_FREE(mobj.cmd);
   return ret;
 }
 
@@ -616,10 +616,10 @@ glusterBlockCreate(int argcount, char **options, int json)
         "failed creating block %s on volume %s with hosts %s",
         cobj.block_name, cobj.volume, cobj.block_hosts);
   }
-  GB_FREE(cobj.cmd);
 
  out:
   GB_FREE(cobj.block_hosts);
+  GB_FREE(cobj.cmd);
 
   return ret;
 }
@@ -636,6 +636,7 @@ glusterBlockList(int argcount, char **options, int json)
   cobj.json_resp = json;
 
   GB_STRCPYSTATIC(cobj.volume, options[2]);
+  getCommandString(&cobj.cmd, argcount, options);
 
   ret = glusterBlockCliRPC_1(&cobj, LIST_CLI);
   if (ret) {
@@ -643,6 +644,7 @@ glusterBlockList(int argcount, char **options, int json)
         cobj.volume);
   }
 
+  GB_FREE(cobj.cmd);
   return ret;
 }
 
@@ -706,10 +708,10 @@ glusterBlockDelete(int argcount, char **options, int json)
     LOG("cli", GB_LOG_ERROR, "failed deleting block %s on volume %s",
         dobj.block_name, dobj.volume);
   }
-  GB_FREE(dobj.cmd);
 
  out:
 
+  GB_FREE(dobj.cmd);
   return ret;
 }
 
@@ -730,6 +732,7 @@ glusterBlockInfo(int argcount, char **options, int json)
     goto out;
   }
 
+  getCommandString(&cobj.cmd, argcount, options);
   ret = glusterBlockCliRPC_1(&cobj, INFO_CLI);
   if (ret) {
     LOG("cli", GB_LOG_ERROR,
@@ -739,6 +742,7 @@ glusterBlockInfo(int argcount, char **options, int json)
 
  out:
 
+  GB_FREE(cobj.cmd);
   return ret;
 }
 
@@ -782,7 +786,6 @@ glusterBlockReplace(int argcount, char **options, int json)
   }
 
   robj.json_resp = json;
-  getCommandString(&robj.cmd, argcount, options);
 
   if (argcount == 6) {
     if (strcmp(options[5], "force")) {
@@ -793,15 +796,16 @@ glusterBlockReplace(int argcount, char **options, int json)
     }
   }
 
+  getCommandString(&robj.cmd, argcount, options);
   ret = glusterBlockCliRPC_1(&robj, REPLACE_CLI);
   if (ret) {
     LOG("cli", GB_LOG_ERROR, "failed replace on volume %s",
         robj.volume);
   }
-  GB_FREE(robj.cmd);
 
  out:
 
+  GB_FREE(robj.cmd);
   return ret;
 }
 

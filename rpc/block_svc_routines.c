@@ -4910,6 +4910,7 @@ block_list_cli_1_svc_st(blockListCli *blk, struct svc_req *rqstp)
   }
 
   GB_METALOCK_OR_GOTO(lkfd, blk->volume, errCode, errMsg, optfail);
+  LOG("cmdlog", GB_LOG_INFO, "%s", blk->cmd);
 
   tgmdfd = glfs_opendir (glfs, GB_METADIR);
   if (!tgmdfd) {
@@ -4995,6 +4996,7 @@ block_list_cli_1_svc_st(blockListCli *blk, struct svc_req *rqstp)
         GB_TXLOCKFILE, blk->volume, strerror(errno));
   }
 
+  LOG("cmdlog", errCode?GB_LOG_ERROR:GB_LOG_INFO, "%s", reply->out);
   return reply;
 }
 
@@ -5181,6 +5183,7 @@ block_info_cli_1_svc_st(blockInfoCli *blk, struct svc_req *rqstp)
   }
 
   GB_METALOCK_OR_GOTO(lkfd, blk->volume, errCode, errMsg, optfail);
+  LOG("cmdlog", GB_LOG_INFO, "%s", blk->cmd);
 
   ret = blockGetMetaInfo(glfs, blk->block_name, info, &errCode);
   if (ret) {
@@ -5209,6 +5212,7 @@ block_info_cli_1_svc_st(blockInfoCli *blk, struct svc_req *rqstp)
 
 
   blockInfoCliFormatResponse(blk, errCode, errMsg, info, reply);
+  LOG("cmdlog", errCode?GB_LOG_ERROR:GB_LOG_INFO, "%s", reply->out);
   GB_FREE(errMsg);
   blockFreeMetaInfo(info);
 

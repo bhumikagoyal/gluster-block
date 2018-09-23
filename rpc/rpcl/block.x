@@ -93,12 +93,14 @@ struct blockDelete {
 struct blockInfoCli {
   char      block_name[255];
   char      volume[255];
+  string    cmd<>;
   enum JsonResponseFormat     json_resp;
 };
 
 struct blockListCli {
   char      volume[255];
   u_quad_t  offset;      /* dentry d_name offset */
+  string    cmd<>;
   enum JsonResponseFormat     json_resp;
 };
 
